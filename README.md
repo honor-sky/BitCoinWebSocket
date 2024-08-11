@@ -23,13 +23,17 @@
 
 1. **Clean Architecture + MVVM**
    - 싱글 모듈로 presentation, domain, data 3개의 계층 으로 구성
+     - domain 계층은 사용자가 실제 앱에서 사용할 기능을 위주로 UseCase 구성
+     - data 계층은 데이터 소스를 관리하는 datasource 폴더를 만들고 websocket 코드를 위치 / repositorys
    - MVVM 패턴을 사용해 ViewModel에 정렬 상태, 실시간으로 들어오는 코인 정보를 저장하고 관리
      - 정렬 상테는 계속 유지되어야 하므로 StateFlow, 코인 정보는 실시간으로 계속 변동되므로 SharedFlow 를 사용
 
 2. **WebSocket**
    - 제공된 sudo 코드와 업비트 문서를 참고해서 구현
-   - client, request는 싱글톤으로 생성
-   - 
+   - client, request는 싱글톤으로 생성 / 동일한 요청이 중복되는 것을 방지하기 위해 dispatcher를 사용해 효율적으로 네트워크 관리
+   - 웹소켓 연결, 해제를 위한 함수를 만들고 외부에서 직접 연결, 해제를 요청할 수 있도록 구현
+   - 코인 데이터는 실시간 스트림 데이터에 적합한 것으로 알려져 있는 Flow를 사용
+   - observeTickerMessages() 메서드를 사용해 실시간으로 들어오는 코인 데이터를 관찰 
 
 </br>
 
