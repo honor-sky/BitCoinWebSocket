@@ -17,29 +17,30 @@ import com.teamdeco.websockettrade.presentation.coinlist.entity.ChangeType
 
 class CoinAdapter : RecyclerView.Adapter<CoinAdapter.CoinViewHolder>() {
 
-    var coinList : MutableList<Ticker>? = null
+    var coinList : MutableList<Ticker> = mutableListOf()
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): CoinViewHolder {
         return CoinViewHolder.from(parent)
     }
 
     override fun onBindViewHolder(holder: CoinViewHolder, position: Int) {
-        if(coinList != null) holder.bind(coinList!![position])
+        if(coinList != null) holder.bind(coinList[position])
     }
 
-    override fun getItemCount() = coinList?.size ?: 0
+    override fun getItemCount() = coinList.size ?: 0
 
 
     fun setNewData(newCoinData : Ticker) {
         // coinList에서 동일한 CoinType 찾아서 값만 변경
-        val data = coinList?.firstOrNull() { it.code == newCoinData.code }
+        Log.d("webSocketListener","setNewData : ${newCoinData}")
+        val data = coinList.firstOrNull() { it.code == newCoinData.code }
         if(data != null) {
             data.trade_price = newCoinData.trade_price
             data.acc_trade_price_24h = newCoinData.acc_trade_price_24h
             data.change = newCoinData.change
 
         } else {
-            coinList?.add(newCoinData)
+            coinList.add(newCoinData)
         }
 
         notifyDataSetChanged()
@@ -49,16 +50,16 @@ class CoinAdapter : RecyclerView.Adapter<CoinAdapter.CoinViewHolder>() {
         when(priceType) {
             PriceType.CURRENT -> {
                 when(sortType) {
-                    SortType.UP -> coinList?.sortBy { it.trade_price }
-                    SortType.DOWN -> coinList?.sortByDescending { it.trade_price }
+                    SortType.UP -> coinList.sortBy { it.trade_price }
+                    SortType.DOWN -> coinList.sortByDescending { it.trade_price }
                     SortType.DEFAULT -> { backToDefaultCoinList() }
                 }
             }
 
             PriceType.ACC_TRADE_24 -> {
                 when(sortType) {
-                    SortType.UP -> coinList?.sortBy { it.acc_trade_price_24h }
-                    SortType.DOWN -> coinList?.sortByDescending { it.acc_trade_price_24h }
+                    SortType.UP -> coinList.sortBy { it.acc_trade_price_24h }
+                    SortType.DOWN -> coinList.sortByDescending { it.acc_trade_price_24h }
                     SortType.DEFAULT -> { backToDefaultCoinList() }
                 }
             }
@@ -68,17 +69,19 @@ class CoinAdapter : RecyclerView.Adapter<CoinAdapter.CoinViewHolder>() {
     }
 
     private fun backToDefaultCoinList() {
-        coinList?.sortWith(Comparator { ticker1, ticker2 ->
+        coinList.sortWith(Comparator { ticker1, ticker2 ->
+            // codeList의 각 비트코인 종목 데이터의 code 값이 코드 리스트에서 어떤 인덱스에 해댱하는지 확인
             val index1 = codeList.indexOf(ticker1.code)
             val index2 = codeList.indexOf(ticker2.code)
 
             when {
-                index1 == -1 && index2 == -1 -> 0  // 둘 다 codeList에 없는 경우
-                index1 == -1 -> 1  // ticker1이 codeList에 없으면 뒤로
-                index2 == -1 -> -1 // ticker2가 codeList에 없으면 뒤로
+                index1 == -1 && index2 == -1 -> 0  // 없는 경우 인덱스는 -1
+                index1 == -1 -> 1
+                index2 == -1 -> -1
                 else -> index1.compareTo(index2)  // codeList에 있는 경우 인덱스 순서대로 정렬
             }
         })
+
     }
 
 
@@ -88,8 +91,8 @@ class CoinAdapter : RecyclerView.Adapter<CoinAdapter.CoinViewHolder>() {
 
             binding.tickerName.text = CoinType.fromKrwAbbr(item.code)
             binding.tickerCode.text = item.code
-            binding.currentPrice.text = item.trade_price.toString() // 단위
-            binding.accTradePrice.text = item.acc_trade_price_24h.toString() // 단위
+            binding.currentPrice.text = "%,.2f".format(item.trade_price)
+            binding.accTradePrice.text = "%,.0f백만".format((item.acc_trade_price_24h / 1_000_000))
 
             if(item.change == ChangeType.RISE.toString()) {
                 binding.currentPrice.setTextColor(ContextCompat.getColor(binding.root.context, R.color.RISE_RED))

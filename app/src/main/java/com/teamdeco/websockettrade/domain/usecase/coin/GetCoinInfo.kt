@@ -1,4 +1,4 @@
-package com.teamdeco.domain.usecase
+package com.teamdeco.websockettrade.domain.usecase.coin
 
 import com.teamdeco.domain.entity.Ticker
 import com.teamdeco.websockettrade.domain.repository.upbit_coin.CoinRepository

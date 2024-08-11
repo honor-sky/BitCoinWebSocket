@@ -5,13 +5,12 @@ import androidx.lifecycle.viewModelScope
 import com.teamdeco.coinlist.entity.PriceType
 import com.teamdeco.coinlist.entity.SortType
 import com.teamdeco.domain.entity.Ticker
-import com.teamdeco.domain.usecase.GetCoinInfo
+import com.teamdeco.websockettrade.domain.usecase.coin.GetCoinInfo
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 

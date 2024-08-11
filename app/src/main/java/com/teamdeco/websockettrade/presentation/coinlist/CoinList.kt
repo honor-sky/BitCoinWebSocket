@@ -56,7 +56,7 @@ class CoinList : AppCompatActivity() {
                 }
 
                 SortType.UP -> {
-                    coinListAdapter.sortCoinList(PriceType.CURRENT, SortType.DOWN)
+                    coinListAdapter.sortCoinList(PriceType.CURRENT, SortType.DEFAULT)
                     viewmodel._stateSortType.value = SortType.DEFAULT
                 }
             }
@@ -79,7 +79,7 @@ class CoinList : AppCompatActivity() {
                 }
 
                 SortType.UP -> {
-                    coinListAdapter.sortCoinList(PriceType.ACC_TRADE_24, SortType.DOWN)
+                    coinListAdapter.sortCoinList(PriceType.ACC_TRADE_24, SortType.DEFAULT)
                     viewmodel._stateSortType.value = SortType.DEFAULT
                 }
             }
