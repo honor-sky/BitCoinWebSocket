@@ -1,0 +1,110 @@
+package com.teamdeco.websockettrade.presentation.coinlist
+
+import android.util.Log
+import android.view.LayoutInflater
+import android.view.ViewGroup
+import androidx.core.content.ContextCompat
+import androidx.recyclerview.widget.RecyclerView
+import com.teamdeco.coinlist.entity.CoinType
+import com.teamdeco.coinlist.entity.PriceType
+import com.teamdeco.coinlist.entity.SortType
+import com.teamdeco.domain.entity.Ticker
+import com.teamdeco.websockettrade.R
+import com.teamdeco.websockettrade.common.CodeList.codeList
+import com.teamdeco.websockettrade.databinding.CoinItemBinding
+import com.teamdeco.websockettrade.presentation.coinlist.entity.ChangeType
+
+
+class CoinAdapter : RecyclerView.Adapter<CoinAdapter.CoinViewHolder>() {
+
+    var coinList : MutableList<Ticker>? = null
+
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): CoinViewHolder {
+        return CoinViewHolder.from(parent)
+    }
+
+    override fun onBindViewHolder(holder: CoinViewHolder, position: Int) {
+        if(coinList != null) holder.bind(coinList!![position])
+    }
+
+    override fun getItemCount() = coinList?.size ?: 0
+
+
+    fun setNewData(newCoinData : Ticker) {
+        // coinList에서 동일한 CoinType 찾아서 값만 변경
+        val data = coinList?.firstOrNull() { it.code == newCoinData.code }
+        if(data != null) {
+            data.trade_price = newCoinData.trade_price
+            data.acc_trade_price_24h = newCoinData.acc_trade_price_24h
+            data.change = newCoinData.change
+
+        } else {
+            coinList?.add(newCoinData)
+        }
+
+        notifyDataSetChanged()
+    }
+
+    fun sortCoinList(priceType : PriceType, sortType : SortType) {
+        when(priceType) {
+            PriceType.CURRENT -> {
+                when(sortType) {
+                    SortType.UP -> coinList?.sortBy { it.trade_price }
+                    SortType.DOWN -> coinList?.sortByDescending { it.trade_price }
+                    SortType.DEFAULT -> { backToDefaultCoinList() }
+                }
+            }
+
+            PriceType.ACC_TRADE_24 -> {
+                when(sortType) {
+                    SortType.UP -> coinList?.sortBy { it.acc_trade_price_24h }
+                    SortType.DOWN -> coinList?.sortByDescending { it.acc_trade_price_24h }
+                    SortType.DEFAULT -> { backToDefaultCoinList() }
+                }
+            }
+
+        }
+        notifyDataSetChanged()
+    }
+
+    private fun backToDefaultCoinList() {
+        coinList?.sortWith(Comparator { ticker1, ticker2 ->
+            val index1 = codeList.indexOf(ticker1.code)
+            val index2 = codeList.indexOf(ticker2.code)
+
+            when {
+                index1 == -1 && index2 == -1 -> 0  // 둘 다 codeList에 없는 경우
+                index1 == -1 -> 1  // ticker1이 codeList에 없으면 뒤로
+                index2 == -1 -> -1 // ticker2가 codeList에 없으면 뒤로
+                else -> index1.compareTo(index2)  // codeList에 있는 경우 인덱스 순서대로 정렬
+            }
+        })
+    }
+
+
+    // 뷰홀더 클래스
+    class CoinViewHolder private constructor(val binding : CoinItemBinding) : RecyclerView.ViewHolder(binding.root) {
+        fun bind(item: Ticker) {
+
+            binding.tickerName.text = CoinType.fromKrwAbbr(item.code)
+            binding.tickerCode.text = item.code
+            binding.currentPrice.text = item.trade_price.toString() // 단위
+            binding.accTradePrice.text = item.acc_trade_price_24h.toString() // 단위
+
+            if(item.change == ChangeType.RISE.toString()) {
+                binding.currentPrice.setTextColor(ContextCompat.getColor(binding.root.context, R.color.RISE_RED))
+            } else if (item.change == ChangeType.FALL.toString()) {
+                binding.currentPrice.setTextColor(ContextCompat.getColor(binding.root.context, R.color.FALL_BLUE))
+            }
+        }
+
+        companion object {
+            fun from(parent: ViewGroup) : CoinViewHolder {
+                val layoutInflater = LayoutInflater.from(parent.context)
+                val binding = CoinItemBinding.inflate(layoutInflater, parent, false)
+
+                return CoinViewHolder(binding)
+            }
+        }
+    }
+}
