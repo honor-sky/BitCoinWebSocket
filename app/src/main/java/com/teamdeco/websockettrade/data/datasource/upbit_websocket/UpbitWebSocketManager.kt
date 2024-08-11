@@ -29,30 +29,23 @@ import javax.inject.Singleton
 @Singleton
 object UpbitWebSocketManager {
 
-    /**
-     * 팩토리 패턴을 사용해 ticker, trade, orderbook, mytrade에 따라 웹소켓 인스턴스 객체를 따로 만들수도 있지만
-     * 동시에 ticker, trade, orderbook, mytrade 데이터를 모두 사용하거나 필요로 하는 경우도 있을 수 있는데
-     * 굳이 인스턴스 객체를 따로따로 나눠서 만들 필요까지는 없다고 생각함.
-     * 아예 완전히 다른 플랫폼의 웹소켓을 사용한다면 모르겠지만.... reqeust, response 구조만 맞춰주면 되는거라고 생각했기 때문에 이렇게 구현
-     */
-
-
     private val UPBIT_WEBSOCKET_BASE_URL = "https://api.upbit.com/websocket/v1"
+
     private val uuid = UUID.randomUUID().toString()
     private val gson: Gson = Gson()
     private var websocket: WebSocket? = null
-    private val _tickerMessagesFlow = MutableSharedFlow<TickerResponse>()
-    //private val _tradeMessagesFlow = MutableSharedFlow<TradeResponse>()
-    //private val _orderbookMessagesFlow = MutableSharedFlow<OrderBookResponse>()
 
+    private val _tickerMessagesFlow = MutableSharedFlow<TickerResponse>()
+
+
+
+    // 동일한 요청이 중복으로 요청되는 것을 방지
     val dispatcher = Dispatcher().apply {
         maxRequestsPerHost = 1
     }
 
     object OkHttpClientSingleton {
         val client: OkHttpClient = OkHttpClient.Builder()
-            .readTimeout(30, SECONDS)
-            .writeTimeout(30, SECONDS)
             .dispatcher(dispatcher)
             .build()
     }
@@ -77,14 +70,13 @@ object UpbitWebSocketManager {
         val type = Type(DataType.ticker, CodeList.codeList)
         return gson.toJson(arrayListOf(ticket, type))
     }
-    // private fun createTrade() : String
-    // private fun createOrderBook() : String
+    /* 다른 데이터를 요청하는 경우, 해당 함수를 구현해 Request구성을 다르게 함
+     * private fun createTrade() : String
+     * private fun createOrderBook() : String
+     */
 
 
     fun observeTickerMessages(): Flow<TickerResponse> = _tickerMessagesFlow.asSharedFlow()
-    //fun observeMessages(): Flow<TradeResponse> = _tradeMessagesFlow.asSharedFlow()
-    //fun observeMessages(): Flow<OrderBookResponse> = _orderbookMessagesFlow.asSharedFlow()
-
 
 
     private val webSocketListener = object : WebSocketListener() {
@@ -92,7 +84,6 @@ object UpbitWebSocketManager {
         // 웹소켓이 열리면 호출
         override fun onOpen(webSocket: okhttp3.WebSocket, response: Response) {
             super.onOpen(webSocket, response)
-            Log.d("webSocketListener","onOpen")
             webSocket.send(createTicket())
         }
 
@@ -107,16 +98,17 @@ object UpbitWebSocketManager {
             when (type) {
                 DataType.ticker.toString() -> {
                     val data = gson.fromJson(bytesToString, TickerResponse::class.java)
-                    //Log.d("webSocketListener","onMessage : ${data}")
                     CoroutineScope(Dispatchers.IO).launch {
                         _tickerMessagesFlow.emit(data)
                     }
                 }
 
-                /* 다른 데이터를 요청하는 경우 */
+                /*
+                // 다른 데이터를 요청하는 경우
                 DataType.trade.toString() -> {}
                 DataType.orderbook.toString() -> {}
                 DataType.mytrade.toString() -> {}
+              */
             }
         }
 
