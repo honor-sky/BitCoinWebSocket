@@ -1,5 +1,7 @@
 package com.teamdeco.websockettrade.presentation.coinlist
 
+import android.os.Handler
+import android.os.Looper
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.ViewGroup
@@ -95,9 +97,18 @@ class CoinAdapter : RecyclerView.Adapter<CoinAdapter.CoinViewHolder>() {
             binding.accTradePrice.text = "%,.0f백만".format((item.acc_trade_price_24h / 1_000_000))
 
             if(item.change == ChangeType.RISE.toString()) {
+
                 binding.currentPrice.setTextColor(ContextCompat.getColor(binding.root.context, R.color.RISE_RED))
+                Handler(Looper.getMainLooper()).postDelayed({
+                    binding.currentPriceLayout.background = ContextCompat.getDrawable(binding.root.context, R.drawable.red_box)
+                }, 2000)
+
             } else if (item.change == ChangeType.FALL.toString()) {
+
                 binding.currentPrice.setTextColor(ContextCompat.getColor(binding.root.context, R.color.FALL_BLUE))
+                Handler(Looper.getMainLooper()).postDelayed({
+                    binding.currentPriceLayout.background = ContextCompat.getDrawable(binding.root.context, R.drawable.blue_box)
+                }, 2000)
             }
         }
 
