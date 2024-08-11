@@ -19,12 +19,21 @@
 
 
 ### Architecture Design
+
 1. **Clean Architecture + MVVM**
-   - 
-3. **WebSocket**
+   - 싱글 모듈로 presentation, domain, data 3개의 계층 으로 구성
+   - MVVM 패턴을 사용해 ViewModel에 정렬 상태, 실시간으로 들어오는 코인 정보를 저장하고 관리
+     - 정렬 상테는 계속 유지되어야 하므로 StateFlow, 코인 정보는 실시간으로 계속 변동되므로 SharedFlow 를 사용
+
+2. **WebSocket**
    - 제공된 sudo 코드와 업비트 문서를 참고해서 구현
    - client, request는 싱글톤으로 생성
    - 
+
+
+### View Design
+- 화면은 단일 액티비티로 구성 / XML을 사용해 UI 구성
+- 리사이클러뷰를 사용해 리스트 화면 구성 & 어댑터를 통해 리스트 정보를 저장하고 아이템 디자인 반영
 
 
 
