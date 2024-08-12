@@ -48,12 +48,9 @@
      1개의 웹소켓 매니저를 object 타입으로 만들고 reqeust 형태를 다르게 구성할 수 있는 create000() 함수와 
      onMessage() 에서 when을 사용해 다양한 Response 타입을 처리할 수 있도록 설계하고자 했습니다.
   
-
    
-   </br> </br>
+   </br>
    
-
-
 
      ```
      @Singleton
