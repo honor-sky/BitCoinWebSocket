@@ -36,114 +36,111 @@
    - 웹소켓 연결, 해제를 위한 함수를 만들고 외부에서 직접 연결, 해제를 요청할 수 있도록 구현
    - 코인 데이터는 실시간 스트림 데이터에 적합한 것으로 알려져 있는 Flow를 사용
   
+   </br> </br>
+   현재는 Ticker(현재가) 데이터만 사용하고 있지만 추후에 업비트 웹소켓에서 제공하는 다른 데이터(Trade, OrderBook) 도 사용할 가능성에 대해 생각해보았습니다. 
 
-     현재는 Ticker(현재가) 데이터만 사용하고 있지만 추후에 업비트 웹소켓에서 제공하는 다른 데이터(Trade, OrderBook) 도 사용할 가능성에 대해 생각해보았습니다. 
+   그래서 좀 더 확장 가능한 형태로 코드를 짜고 싶다고 생각했고 처음에는 웹소켓 인터페이스를 만들고 어떤 데이터를 가져오느냐에 따라 서로 다른 구현체를 만들어 사용하는 방식으로 구현하는 방식을 고민했으나 
+   Request/Response 타입이 달라진다는 것 외에는 구현체마다 차이가 크지는 않을 것 같다고 생각했습니다. 
 
-     그래서 좀 더 확장 가능한 형태로 코드를 짜고 싶다고 생각했고 처음에는 웹소켓 인터페이스를 만들고 어떤 데이터를 가져오느냐에 따라 서로 다른 구현체를 만들어 사용하는 방식으로 구현하는 방식을 고민했으나 
-     Request/Response 타입이 달라진다는 것 외에는 구현체마다 차이가 크지는 않을 것 같다고 생각했습니다. 
-
-     따라서 동일한 플랫폼(업비트)에서 사용하는 웹소켓의 경우, 
-     1개의 웹소켓 매니저를 object 타입으로 만들고 reqeust 형태를 다르게 구성할 수 있는 create000() 함수와 
-     onMessage() 에서 when을 사용해 다양한 Response 타입을 처리할 수 있도록 설계하고자 했습니다.
+   따라서 동일한 플랫폼(업비트)에서 사용하는 웹소켓의 경우, 
+   1개의 웹소켓 매니저를 object 타입으로 만들고 reqeust 형태를 다르게 구성할 수 있는 create000() 함수와 
+   onMessage() 에서 when을 사용해 다양한 Response 타입을 처리할 수 있도록 설계하고자 했습니다.
 
 
 
      ```
      @Singleton
-
      object UpbitWebSocketManager {
 
-       private val UPBIT_WEBSOCKET_BASE_URL = "https://api.upbit.com/websocket/v1"
+              private val UPBIT_WEBSOCKET_BASE_URL = "https://api.upbit.com/websocket/v1"
     
-       private val uuid = UUID.randomUUID().toString()
-       private val gson: Gson = Gson()
-       private var websocket: WebSocket? = null
+              private val uuid = UUID.randomUUID().toString()
+              private val gson: Gson = Gson()
+              private var websocket: WebSocket? = null
     
-       private val _tickerMessagesFlow = MutableSharedFlow<TickerResponse>()
+              private val _tickerMessagesFlow = MutableSharedFlow<TickerResponse>()
     
-       val dispatcher = Dispatcher().apply {
-           maxRequestsPerHost = 1
-       } 
+              val dispatcher = Dispatcher().apply {
+                   maxRequestsPerHost = 1
+              } 
 
-       object OkHttpClientSingleton {
-           val client: OkHttpClient = OkHttpClient.Builder()
-               .dispatcher(dispatcher)
-               .build()
-       }
+             object OkHttpClientSingleton {
+                   val client: OkHttpClient = OkHttpClient.Builder()
+                       .dispatcher(dispatcher)
+                       .build()
+            }
 
-       object RequestSingleton {
-           val request: Request = Request.Builder()
-               .url(UPBIT_WEBSOCKET_BASE_URL)
-               .build()
-       }
+             object RequestSingleton {
+                   val request: Request = Request.Builder()
+                       .url(UPBIT_WEBSOCKET_BASE_URL)
+                       .build()
+             }
 
-       fun connect() {
-           websocket = OkHttpClientSingleton.client.newWebSocket(RequestSingleton.request, webSocketListener)
-       }
+             fun connect() {
+                   websocket = OkHttpClientSingleton.client.newWebSocket(RequestSingleton.request, webSocketListener)
+             }
 
-       fun disconnect() {
-           websocket?.close(1000, "THE END")
-       } 
-
-
-       private fun createTicket() : String {
-           val ticket = Ticket(uuid)
-           val type = Type(DataType.ticker, CodeList.codeList)
-           return gson.toJson(arrayListOf(ticket, type))
-       }
-
-       /* 다른 데이터를 요청하는 경우, 해당 함수를 구현해 Request구성을 다르게 함
-        * private fun createTrade() : String
-        * private fun createOrderBook() : String
-        */
+             fun disconnect() {
+                   websocket?.close(1000, "THE END")
+             } 
 
 
-       fun observeTickerMessages(): Flow<TickerResponse> = _tickerMessagesFlow.asSharedFlow()
+             private fun createTicket() : String {
+                  val ticket = Ticket(uuid)
+                  val type = Type(DataType.ticker, CodeList.codeList)
+                  return gson.toJson(arrayListOf(ticket, type))
+             }
+             /* 다른 데이터를 요청하는 경우, 해당 함수를 구현해 Request구성을 다르게 함
+             * private fun createTrade() : String
+             * private fun createOrderBook() : String
+             */
 
 
-       private val webSocketListener = object : WebSocketListener() {
+             fun observeTickerMessages(): Flow<TickerResponse> = _tickerMessagesFlow.asSharedFlow()
 
-           // 웹소켓이 열리면 호출
-           override fun onOpen(webSocket: okhttp3.WebSocket, response: Response) {
-               super.onOpen(webSocket, response)
-               Log.d("webSocketListener","onOpen")
-               webSocket.send(createTicket())
-           }
 
-           // 웹소켓으로부터 데이터를 받을 때 호출
-           override fun onMessage(webSocket: WebSocket, bytes: ByteString) {
-               super.onMessage(webSocket, bytes)
+             private val webSocketListener = object : WebSocketListener() {
 
-               val bytesToString = bytes.toByteArray().decodeToString()
-               val jsonObject = JSONObject(bytesToString)
-               val type = jsonObject.getString("type")
+             // 웹소켓이 열리면 호출
+             override fun onOpen(webSocket: okhttp3.WebSocket, response: Response) {
+                     super.onOpen(webSocket, response)
 
-               when (type) {
-                   DataType.ticker.toString() -> {
-                       val data = gson.fromJson(bytesToString, TickerResponse::class.java)
-                       CoroutineScope(Dispatchers.IO).launch {
-                           _tickerMessagesFlow.emit(data)
+                     webSocket.send(createTicket())
+             }
+
+             // 웹소켓으로부터 데이터를 받을 때 호출
+             override fun onMessage(webSocket: WebSocket, bytes: ByteString) {
+                     super.onMessage(webSocket, bytes)
+
+                    val bytesToString = bytes.toByteArray().decodeToString()
+                    val jsonObject = JSONObject(bytesToString)
+                    val type = jsonObject.getString("type")
+
+                   when (type) {
+                       DataType.ticker.toString() -> {
+                            val data = gson.fromJson(bytesToString, TickerResponse::class.java)
+                            CoroutineScope(Dispatchers.IO).launch {
+                               _tickerMessagesFlow.emit(data)
+                            }
                        }
-                   }
 
-                 /* 
-                   // 다른 데이터를 요청하는 경우 
-                   DataType.trade.toString() -> {}
-                   DataType.orderbook.toString() -> {}
-                   DataType.mytrade.toString() -> {}
-                 */
-              
-               }
-           }
+                    /* 
+                      // 다른 데이터를 요청하는 경우 
+                      DataType.trade.toString() -> {}
+                      DataType.orderbook.toString() -> {}
+                      DataType.mytrade.toString() -> {}
+                    */
+                 }
+             }
 
-           // 웹소켓이 닫힐 때 호출
-           override fun onClosed(webSocket: WebSocket, code: Int, reason: String) {
-               super.onClosed(webSocket, code, reason)
-               websocket = null
-           }
-       }
+             // 웹소켓이 닫힐 때 호출
+             override fun onClosed(webSocket: WebSocket, code: Int, reason: String) {
+                     super.onClosed(webSocket, code, reason)
+                     websocket = null
+             }
+          }
 
-     }
+        }
 
      ```
 
