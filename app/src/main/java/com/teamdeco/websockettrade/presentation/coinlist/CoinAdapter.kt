@@ -37,6 +37,7 @@ class CoinAdapter : RecyclerView.Adapter<CoinAdapter.CoinViewHolder>() {
         Log.d("webSocketListener","setNewData : ${newCoinData}")
         val data = coinList.firstOrNull() { it.code == newCoinData.code }
         if(data != null) {
+            data.pre_trade_price = data.trade_price
             data.trade_price = newCoinData.trade_price
             data.acc_trade_price_24h = newCoinData.acc_trade_price_24h
             data.change = newCoinData.change
@@ -97,15 +98,19 @@ class CoinAdapter : RecyclerView.Adapter<CoinAdapter.CoinViewHolder>() {
             binding.accTradePrice.text = "%,.0f백만".format((item.acc_trade_price_24h / 1_000_000))
 
             if(item.change == ChangeType.RISE.toString()) {
-
                 binding.currentPrice.setTextColor(ContextCompat.getColor(binding.root.context, R.color.RISE_RED))
+            } else if (item.change == ChangeType.FALL.toString()) {
+                binding.currentPrice.setTextColor(ContextCompat.getColor(binding.root.context, R.color.FALL_BLUE))
+            }
+
+            // 현재가 변동에 따른 박스 애니메이션
+            if(item.trade_price > item.pre_trade_price) { // 상승
                 Handler(Looper.getMainLooper()).postDelayed({
                     binding.currentPriceLayout.background = ContextCompat.getDrawable(binding.root.context, R.drawable.red_box)
                 }, 2000)
 
-            } else if (item.change == ChangeType.FALL.toString()) {
+            } else if(item.trade_price < item.pre_trade_price) { // 하락
 
-                binding.currentPrice.setTextColor(ContextCompat.getColor(binding.root.context, R.color.FALL_BLUE))
                 Handler(Looper.getMainLooper()).postDelayed({
                     binding.currentPriceLayout.background = ContextCompat.getDrawable(binding.root.context, R.drawable.blue_box)
                 }, 2000)
