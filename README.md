@@ -1,8 +1,7 @@
 ## Intro
 - Upbit의 웹소켓을 사용해 비트코인의 현재가, 누적대금 정보를 실시간으로 화면에 표시 합니다
 </br>
-<img src="https://github.com/user-attachments/assets/048be972-aae6-40e6-9741-f02b812af9ce" width="280" height="560">
-
+<img src="https://github.com/user-attachments/assets/3ecc0091-6b69-4462-8331-57271850bbb3" width="280" height="560">
 
 
 ## 🗺️ Information & Design
